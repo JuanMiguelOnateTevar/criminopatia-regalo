@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Criminopatía · Caso Final</title>
+
+<style>
+body{
+  margin:0;
+  background:#0e0e12;
+  color:#f2f2f2;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+.wrap{ max-width:720px; margin:auto; padding:20px; }
+.card{
+  background:#17171c;
+  border:1px solid #2b2b36;
+  border-radius:18px;
+  padding:18px;
+  box-shadow:0 20px 40px rgba(0,0,0,.35);
+}
+h1{ font-size:22px; margin:0 0 6px; }
+p{ color:#cfcfda; }
+.timer{ font-weight:bold; color:#ffd36e; }
+.q{
+  margin-top:16px;
+  padding:14px;
+  background:#121217;
+  border-radius:14px;
+  border:1px dashed #3a3a46;
+}
+button{
+  width:100%;
+  padding:12px;
+  margin-top:8px;
+  border-radius:12px;
+  border:1px solid #333343;
+  background:#1f1f28;
+  color:#f2f2f2;
+  font-size:15px;
+}
+button:hover{ background:#2a2a36; }
+button:disabled{ opacity:.5; cursor:not-allowed; }
+.ok{ color:#7CFFB2; }
+.bad{ color:#ff8b8b; }
+.lock{ color:#ff5252; font-weight:bold; }
+img{
+  width:100%;
+  border-radius:16px;
+  margin-top:20px;
+  display:none;
+}
+.download{
+  margin-top:10px;
+  background:#2a7cff;
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+<div class="card">
+
+<h1>Criminopatía · Acceso restringido</h1>
+<p id="status">
+Tiempo restante: <span class="timer" id="timer"></span> segundos
+</p>
+
+<div id="quiz"></div>
+<p id="msg"></p>
+
+<!-- DECISIÓN -->
+<div id="decision" style="display:none;">
+  <div class="q">
+    <h2>🗂️ Caso resuelto… ¿o no?</h2>
+    <button onclick="darPremio()">🎁 Obtener el premio</button>
+    <button onclick="continuar()">🔍 Seguir investigando (5 preguntas más)</button>
+  </div>
+</div>
+
+<img id="reward" src="regalo.png">
+<a id="downloadBtn" class="download" download="evidencia_final.png"
+   href="regalo.png" style="display:none;">⬇️ Descargar evidencia</a>
+
+</div>
+</div>
+
+<audio id="soundOk" src="acierto.mp3"></audio>
+<audio id="soundFail" src="fallo.mp3"></audio>
+
+<script>
+/* ================= CONFIG ================= */
+const TIEMPO_POR_PREGUNTA = 15;
+const MAX_FALLOS = 3;
+const STORAGE_KEY = "criminopatia_bloqueado";
+
+/* ================= PREGUNTAS ================= */
+const BLOQUE1 = [
+ {q:"¿Cuántas chicas desaparecieron en Alcàsser?", o:["Tres","Dos","Cuatro"], c:"Tres"},
+ {q:"¿Qué sigue siendo un misterio en el caso Marta del Castillo?", o:["El paradero del cuerpo","El año","La identidad"], c:"El paradero del cuerpo"},
+ {q:"¿Quiénes fueron condenados por la muerte de Asunta?", o:["Sus padres","Un profesor","Un desconocido"], c:"Sus padres"},
+ {q:"Error judicial en Wanninkhof por…", o:["Pruebas circunstanciales","Vídeo","Confesión"], c:"Pruebas circunstanciales"},
+ {q:"¿Dónde apareció Diana Quer?", o:["En un pozo","En el mar","En un bosque"], c:"En un pozo"}
+];
+
+const BLOQUE2 = [
+ {q:"¿Qué permitió reabrir Wanninkhof–Carabantes?", o:["ADN","Testigo","Confesión"], c:"ADN"},
+ {q:"¿Dónde ocurrió el crimen de Patraix?", o:["En un garaje","En el campo","En una oficina"], c:"En un garaje"},
+ {q:"¿Quién fue la principal condenada en Guardia Urbana?", o:["Rosa Peral","Ana Julia","Dolores Vázquez"], c:"Rosa Peral"},
+ {q:"¿Dónde ocurrió el crimen de Nagore Laffage?", o:["San Fermín","Un piso","Una discoteca"], c:"San Fermín"},
+ {q:"Apodo de Gabriel Cruz", o:["El Pescaíto","El Principito","El Niño del Mar"], c:"El Pescaíto"}
+];
+
+let preguntas = [...BLOQUE1];
+let indice = 0;
+let fallos = 0;
+let tiempo;
+let intervalo;
+
+/* ================= BLOQUEO PERMANENTE ================= */
+if(localStorage.getItem(STORAGE_KEY)){
+  document.getElementById("quiz").innerHTML =
+    "<p class='lock'>🚫 Caso cerrado permanentemente.</p>";
+  throw new Error("Juego bloqueado");
+}
+
+/* ================= FUNCIONES ================= */
+function mezclar(a){ return a.sort(()=>Math.random()-0.5); }
+
+function iniciarTimer(){
+  tiempo = TIEMPO_POR_PREGUNTA;
+  document.getElementById("timer").innerText = tiempo;
+  clearInterval(intervalo);
+  intervalo = setInterval(()=>{
+    tiempo--;
+    document.getElementById("timer").innerText = tiempo;
+    if(tiempo <= 0){
+      terminarJuego("⏱️ Tiempo agotado.");
+    }
+  },1000);
+}
+
+function render(){
+  iniciarTimer();
+  const p = preguntas[indice];
+  const ops = mezclar([...p.o]);
+  let html = `<div class="q"><h2>${p.q}</h2>`;
+  ops.forEach(op=>{
+    html += `<button onclick="responder('${op}','${p.c}')">${op}</button>`;
+  });
+  html += "</div>";
+  document.getElementById("quiz").innerHTML = html;
+}
+
+function responder(sel, cor){
+  clearInterval(intervalo);
+
+  if(sel === cor){
+    const s=document.getElementById("soundOk");
+    s.pause(); s.currentTime=0; s.play();
+
+    document.getElementById("msg").innerHTML =
+      "<span class='ok'>✔️ Correcto.</span>";
+
+    indice++;
+
+    if(indice === BLOQUE1.length){
+      document.getElementById("decision").style.display="block";
+      document.getElementById("quiz").innerHTML="";
+      return;
+    }
+
+    if(indice >= preguntas.length){
+      ganar();
+    } else {
+      setTimeout(render,600);
+    }
+
+  } else {
+    fallos++;
+    const s=document.getElementById("soundFail");
+    s.pause(); s.currentTime=0; s.play();
+
+    document.getElementById("msg").innerHTML =
+      `<span class="bad">❌ Incorrecto. Fallos: ${fallos}/${MAX_FALLOS}</span>`;
+
+    if(fallos >= MAX_FALLOS){
+      terminarJuego("Has fallado demasiadas veces.");
+    } else {
+      setTimeout(render,600);
+    }
+  }
+}
+
+function continuar(){
+  preguntas = [...BLOQUE1, ...BLOQUE2];
+  document.getElementById("decision").style.display="none";
+  document.getElementById("msg").innerHTML =
+    "<span class='ok'>🔓 Nivel avanzado desbloqueado.</span>";
+  render();
+}
+
+function darPremio(){
+  ganar();
+}
+
+function terminarJuego(m){
+  clearInterval(intervalo);
+  localStorage.setItem(STORAGE_KEY,"1");
+  document.getElementById("quiz").innerHTML="";
+  document.getElementById("decision").style.display="none";
+  document.getElementById("msg").innerHTML =
+    `<span class='lock'>🚫 ${m}</span>`;
+}
+
+function ganar(){
+  clearInterval(intervalo);
+  document.getElementById("quiz").innerHTML="";
+  document.getElementById("decision").style.display="none";
+  document.getElementById("reward").style.display="block";
+  document.getElementById("downloadBtn").style.display="block";
+  document.getElementById("msg").innerHTML =
+    "<span class='ok'>🏆 Investigación completada. Evidencia desbloqueada.</span>";
+}
+
+/* ================= START ================= */
+render();
+</script>
+
+</body>
+</html>
