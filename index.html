@@ -81,7 +81,7 @@ img{
   <div class="q">
     <h2>🕯️ Has llegado a un punto de elección</h2>
     <button onclick="ganar()">🎁 Aceptar recompensa</button>
-    <button onclick="continuar()">🔍 Seguir investigando (10 más)</button>
+    <button onclick="continuar()">🔍 Seguir investigando</button>
   </div>
 </div>
 
@@ -134,7 +134,7 @@ let fallos = 0;
 let tiempo = TIEMPO;
 let intervalo;
 
-/* BLOQUEO PERMANENTE */
+/* BLOQUEO */
 if(localStorage.getItem(STORAGE_KEY)){
  document.getElementById("quiz").innerHTML =
  "<p class='lock'>🚫 Caso cerrado permanentemente</p>";
@@ -157,7 +157,7 @@ function iniciarTimer(){
 function render(){
  iniciarTimer();
  const p = preguntas[indice];
- let html = `<div class="q"><h2>${indice+1}/20 · ${p.q}</h2>`;
+ let html = `<div class="q"><h2>${p.q}</h2>`;
  mezclar([...p.o]).forEach(op=>{
    html += `<button onclick="responder('${op}','${p.c}')">${op}</button>`;
  });
@@ -220,3 +220,4 @@ render();
 </script>
 </body>
 </html>
+
