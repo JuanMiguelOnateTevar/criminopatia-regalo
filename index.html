@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Criminopatía · Expediente Final</title>
+<title>Criminopatía · Expediente Confidencial</title>
 
 <style>
 body{
@@ -95,10 +95,12 @@ img{
 <audio id="failSound" src="fallo.mp3"></audio>
 
 <script>
-/* CONFIG */
+/* ================= CONFIG ================= */
 const TIEMPO = 15;
 const MAX_FALLOS = 3;
 const STORAGE_KEY = "criminopatia_bloqueado";
+
+/* ================= PREGUNTAS ================= */
 
 /* BLOQUE 1 (10) */
 const BLOQUE1 = [
@@ -107,7 +109,7 @@ const BLOQUE1 = [
  {q:"¿Quiénes fueron condenados por el caso Asunta?",o:["Sus padres","Un profesor","Un desconocido"],c:"Sus padres"},
  {q:"El error judicial en Wanninkhof se debió a…",o:["Pruebas circunstanciales","Confesión","Vídeo"],c:"Pruebas circunstanciales"},
  {q:"¿Dónde apareció Diana Quer?",o:["En un pozo","En el mar","En un bosque"],c:"En un pozo"},
- {q:"Relación del condenado en Urquijo",o:["Yerno","Empleado","Vecino"],c:"Yerno"},
+ {q:"Relación del condenado en Urquijo",o:["Vecino","Yerno","Empleado"],c:"Yerno"},
  {q:"Víctimas del caso Bretón",o:["Sus hijos","Su pareja","Un familiar"],c:"Sus hijos"},
  {q:"¿Dónde ocurrió el crimen de Patraix?",o:["En un garaje","En una casa","En la calle"],c:"En un garaje"},
  {q:"Prueba clave Wanninkhof–Carabantes",o:["ADN","Testimonio","Confesión"],c:"ADN"},
@@ -128,21 +130,24 @@ const BLOQUE2 = [
  {q:"Ocultación en el caso Bretón",o:["Quemar los cuerpos","Enterrarlos","Arrojarlos"],c:"Quemar los cuerpos"}
 ];
 
+/* ================= ESTADO ================= */
 let preguntas = [...BLOQUE1];
 let indice = 0;
 let fallos = 0;
 let tiempo = TIEMPO;
 let intervalo;
 
-/* BLOQUEO */
+/* ================= BLOQUEO PERMANENTE ================= */
 if(localStorage.getItem(STORAGE_KEY)){
  document.getElementById("quiz").innerHTML =
  "<p class='lock'>🚫 Caso cerrado permanentemente</p>";
  throw new Error("Bloqueado");
 }
 
+/* ================= UTILS ================= */
 function mezclar(a){ return a.sort(()=>Math.random()-0.5); }
 
+/* ================= TIMER ================= */
 function iniciarTimer(){
  tiempo = TIEMPO;
  document.getElementById("timer").innerText = tiempo;
@@ -154,6 +159,7 @@ function iniciarTimer(){
  },1000);
 }
 
+/* ================= RENDER ================= */
 function render(){
  iniciarTimer();
  const p = preguntas[indice];
@@ -165,6 +171,7 @@ function render(){
  document.getElementById("quiz").innerHTML = html;
 }
 
+/* ================= GAME LOGIC ================= */
 function responder(sel,cor){
  clearInterval(intervalo);
  if(sel===cor){
@@ -216,8 +223,13 @@ function ganar(){
  "<span class='ok'>🏆 Investigación completada</span>";
 }
 
+/* ================= START ================= */
 render();
+
+/* ================= RESET SOLO PARA TI =================
+   En consola del navegador:
+   localStorage.removeItem('criminopatia_bloqueado')
+*/
 </script>
 </body>
 </html>
-
